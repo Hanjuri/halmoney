@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:halmoney/pages/signup_page_one.dart';
+import 'package:halmoney/signup_pages/signup_originalpage.dart';
 
 class AgreementPage extends StatefulWidget {
   //statefulwidget : 변경 가능한 상태를 가진 위젯

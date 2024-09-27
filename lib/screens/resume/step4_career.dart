@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:halmoney/screens/resume/step5_quantity.dart';
-import 'package:halmoney/screens/resume/career.dart';
-import 'package:halmoney/screens/resume/userInput.dart';
+import 'package:halmoney/get_user_info/career.dart';
+import 'package:halmoney/FirestoreData/user_Info.dart';
+import 'package:halmoney/screens/resume/user_prompt_factor.dart';
 
 class StepCareerPage extends StatefulWidget {
-  final UserInput userInput;
+  final UserInfo userInfo;
+  final UserPromptFactor userPromptFactor;
 
   StepCareerPage({
     super.key,
-    required this.userInput,
+    required this.userInfo,
+    required this.userPromptFactor,
   });
 
   @override
@@ -16,207 +19,279 @@ class StepCareerPage extends StatefulWidget {
 }
 
 class _StepCareerPageState extends State<StepCareerPage> {
-  List<Career> careers = [];
+  late List<Career> careers;
+  List<Map<String, TextEditingController>> userInputControllers = [];
+  bool isEditing = false; // 편집 모드 여부
+  int? editingIndex; // 편집 중인 경력의 인덱스
+  Career? originalCareer; // 취소 시 복원할 원래 경력 정보
 
-  void addCareer() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return CareerDialog(
-          onSave: (newCareer) {
-            setState(() {
-              careers.add(newCareer);
-            });
-          },
-        );
-      },
-    );
-  }
+  @override
+  void initState() {
+    super.initState();
+    careers = widget.userPromptFactor.getCareers();
 
-  void editCareer(int index) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return CareerDialog(
-          career: careers[index],
-          onSave: (updatedCareer) {
-            setState(() {
-              careers[index] = updatedCareer;
-            });
-          },
-        );
-      },
-    );
-  }
-
-  void removeCareer(int index) {
-    setState(() {
-      careers.removeAt(index);
+    userInputControllers = List.generate(careers.length, (index)
+    {
+      return {
+        'place': TextEditingController(text: careers[index].workPlace),
+        'duration': TextEditingController(text: careers[index].workDuration),
+      };
     });
   }
 
-  bool areAllFieldsFilled() {
-    for (var career in careers) {
-      if (career.startYear.isEmpty ||
-          career.startMonth.isEmpty ||
-          career.endYear.isEmpty ||
-          career.endMonth.isEmpty ||
-          career.place.isEmpty ||
-          career.description.isEmpty) {
-        return false;
+  //경력 추가하기
+  void addCareer() {
+    setState(() {
+      careers.insert(0, Career());
+      userInputControllers.insert(0, {
+        'place': TextEditingController(),
+        'duration' : TextEditingController(),
+      });
+      isEditing = true;
+      editingIndex = 0;
+    });
+  }
+
+  //경력 수정하기
+  void editCareer(int index) {
+    setState(() {
+      isEditing = true;
+      editingIndex = index;
+      originalCareer = careers[index].clone();
+    });
+  }
+
+  //경력 수정 완료하기
+  void completeEdit() {
+    setState(() {
+      isEditing = false;
+      editingIndex = null;
+      originalCareer = null;
+    });
+  }
+
+  // 경력 수정 취소하기
+  void cancelEdit() {
+    setState(() {
+      if (editingIndex == 0 && originalCareer == null) {
+        // 새로운 경력 작성 중에 취소한 경우, 해당 경력 삭제
+        careers.removeAt(0);
+        userInputControllers.removeAt(0);
+      } else if (originalCareer != null && editingIndex != null) {
+        // 기존 경력 수정 중에 취소한 경우, 원본 경력으로 복원
+        careers[editingIndex!] = originalCareer!;
+        userInputControllers[editingIndex!]['place']?.text = originalCareer!.workPlace;
+        userInputControllers[editingIndex!]['duration']?.text = originalCareer!.workDuration;
       }
-    }
-    return true;
+      isEditing = false;
+      editingIndex = null;
+      originalCareer = null;
+    });
+  }
+
+  //경력 제거하기
+  void removeCareer(int index) {
+    setState(() {
+      careers.removeAt(index);
+      userInputControllers.removeAt(index);
+    });
+  }
+
+  //경력 입력시 공란 여부 확인
+  bool areAllFieldsFilled(int index) {
+    final career = careers[index];
+    return career.workDuration.isNotEmpty &&
+        career.workUnit.isNotEmpty &&
+        career.workPlace.isNotEmpty;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 1.0,
-        title: Row(
-          children: [
-            Image.asset(
-              'assets/images/img_logo.png',
-              fit: BoxFit.contain,
-              height: 40,
-            ),
-            Container(
-              padding: const EdgeInsets.all(8.0),
-              child: const Text(
-                '할MONEY',
-                style: TextStyle(
-                  fontFamily: 'NanumGothicFamily',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18.0,
-                  color: Colors.black,
-                ),
-              ),
-            ),
-          ],
+    return Theme(
+      data: Theme.of(context).copyWith(
+        textTheme: Theme.of(context).textTheme.apply(
+          fontFamily: 'NanumGothicFamily',
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.only(left: 25.0, right: 25.0, top: 25.0),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // 이전 페이지로 이동
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Row(
-                    children: [
-                      Icon(
-                        Icons.chevron_left,
-                        size: 30,
-                      ),
-                      Text('이전',
-                          style: TextStyle(
-                            fontFamily: 'NanumGothicFamily',
-                            fontSize: 20.0,
-                            color: Colors.black,
-                          )),
-                    ],
-                  ),
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: const Color.fromARGB(250, 51, 51, 255),
+          elevation: 1.0,
+          leading: null,
+          automaticallyImplyLeading: false,
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.pop(context);
+                },
+                child: const Row(
+                  children: [
+                    //SizedBox(width: 5),
+                    Icon(
+                      Icons.chevron_left,
+                      size: 30,
+                    ),
+                    Text('이전',
+                        style: TextStyle(
+                          fontFamily: 'NanumGothicFamily',
+                          fontSize: 20.0,
+                          color: Colors.white,
+                        )),
+                  ],
                 ),
-
-                //다음 페이지로 이동
-                GestureDetector(
-                  onTap: () {
-                    widget.userInput.editCareers(careers);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              StepQuantityPage(userInput: widget.userInput)),
-                    );
-                  },
-                  child: const Row(
-                    children: [
-                      Text('다음',
-                          style: TextStyle(
-                            fontFamily: 'NanumGothicFamily',
-                            fontSize: 20.0,
-                            color: Colors.black,
-                          )),
-                      Icon(
-                        Icons.chevron_right,
-                        size: 30,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(
-              height: 25,
-            ),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Text('이력사항을 입력해주세요!',
+              ),
+              Container(
+                  padding: const EdgeInsets.all(8.0),
+                  child: const Text(
+                    '3 / 5',
                     style: TextStyle(
                       fontFamily: 'NanumGothicFamily',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 28.0,
-                      color: Colors.black,
-                    )),
-              ],
-            ),
-            const SizedBox(
-              height: 25,
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: careers.length + 1,
-                itemBuilder: (context, index) {
-                  if (index == careers.length) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10.0),
-                      child: Center(
-                        child: GestureDetector(
-                          onTap: addCareer,
-                          child: Container(
-                            height: 80,
-                            width: double.infinity,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.add, color: Colors.blue),
-                                SizedBox(width: 10),
-                                Text('경력 추가',
-                                    style: TextStyle(color: Colors.blue)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  } else {
+                      fontWeight: FontWeight.w600,
+                      fontSize: 18.0,
+                      color: Colors.white,
+                    ),
+                  )),
+              GestureDetector(
+                onTap: () {
+                  widget.userPromptFactor.editCareers(careers);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => StepQuantityPage(
+                          userInfo: widget.userInfo,
+                          userPromptFactor: widget.userPromptFactor,
+                        )),
+                  );
+                },
+                child: const Row(
+                  children: [
+                    Text('다음',
+                        style: TextStyle(
+                          fontFamily: 'NanumGothicFamily',
+                          fontSize: 20.0,
+                          color: Colors.white,
+                        )),
+                    Icon(
+                      Icons.chevron_right,
+                      size: 30,
+                      color: Colors.white,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.only(left: 25.0, right: 25.0, top: 25.0),
+          child: Column(
+            children: [
+              const SizedBox(
+                height: 25,
+              ),
+
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Flexible(
+                    child: Text('경력을 추가하거나 삭제하세요',
+                        style: TextStyle(
+                          fontFamily: 'NanumGothicFamily',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 28.0,
+                          color: Colors.black,
+                        )),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Flexible(
+                    child: Text('아래의 경력은 자기소개서 생성에 활용됩니다',
+                        style: TextStyle(
+                          fontFamily: 'NanumGothicFamily',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 20.0,
+                          color: Colors.black,
+                        )),
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 25,
+              ),
+
+              GestureDetector(
+                onTap: isEditing ? null : addCareer,
+                child: Container(
+                  height: 80,
+                  width: double.infinity,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add, size:30, color: Color.fromARGB(250, 51, 51, 255)),
+                      SizedBox(width: 10),
+                      Text('경력 추가',
+                          style: TextStyle(
+                            color: Color.fromARGB(250, 51, 51, 255),
+                            fontSize: 28,
+                            fontFamily: 'NanumGothicFamily',
+                            fontWeight: FontWeight.w500,
+                          )),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // 경력 표시 영역
+              Expanded(
+                child: ListView.builder(
+                  itemCount: careers.length,
+                  itemBuilder: (context, index) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10.0),
                       child: CareerDisplay(
                         career: careers[index],
+                        isEditing: isEditing && editingIndex == index,
+                        onSave: areAllFieldsFilled(index)
+                            ? () {
+                          completeEdit();
+                        }
+                            : null,
+                        onCancel: cancelEdit,
                         onEdit: () => editCareer(index),
                         onRemove: () => removeCareer(index),
+                        onFieldChange: (String field, String value) {
+                          setState(() {
+                            if (field == 'duration') {
+                              careers[index].workDuration = value;
+                            } else if (field == 'unit') {
+                              careers[index].workUnit = value;
+                            } else if (field == 'place') {
+                              careers[index].workPlace = value;
+                            }
+                          });
+                        },
+                        workPlaceController: userInputControllers[index]['place']!,
+                        workDurationController: userInputControllers[index]['duration']!,
                       ),
                     );
-                  }
-                },
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -225,527 +300,229 @@ class _StepCareerPageState extends State<StepCareerPage> {
 
 class CareerDisplay extends StatelessWidget {
   final Career career;
+  final bool isEditing;
+  final VoidCallback? onSave;
+  final VoidCallback? onCancel;
   final VoidCallback onEdit;
   final VoidCallback onRemove;
+  final void Function(String field, String value) onFieldChange;
+  final TextEditingController workPlaceController;
+  final TextEditingController workDurationController;
 
   const CareerDisplay({
     super.key,
     required this.career,
+    required this.isEditing,
+    required this.onSave,
+    required this.onCancel,
     required this.onEdit,
     required this.onRemove,
+    required this.onFieldChange,
+    required this.workPlaceController,
+    required this.workDurationController,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (career.workUnit.isEmpty) {
+      career.workUnit = '년';
+    }
     return Container(
-      margin: const EdgeInsets.only(top: 15.0),
-      padding:
-          const EdgeInsets.only(top: 5.0, bottom: 20.0, left: 20, right: 10),
+      margin: const EdgeInsets.only(top: 5.0),
+      padding: const EdgeInsets.all(15.0),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey),
-        borderRadius: const BorderRadius.all(
-          Radius.circular(20),
-        ),
+        borderRadius: const BorderRadius.all(Radius.circular(20)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                career.place,
-                style: const TextStyle(fontSize: 18),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: onEdit,
-                    child:
-                        const Text('편집', style: TextStyle(color: Colors.blue)),
-                  ),
-                  TextButton(
-                    onPressed: onRemove,
-                    child:
-                        const Text('삭제', style: TextStyle(color: Colors.red)),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '근무 기간     ',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    '근무 내용      ',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${career.startYear}년 ${career.startMonth}월 ~ ${career.endYear}년 ${career.endMonth}월',
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    career.description,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                ],
-              ),
-            ],
-          )
-        ],
-      ),
-    );
-  }
-}
-
-class CareerDialog extends StatefulWidget {
-  final Career? career;
-  final void Function(Career) onSave;
-
-  const CareerDialog({
-    super.key,
-    this.career,
-    required this.onSave,
-  });
-
-  @override
-  _CareerDialogState createState() => _CareerDialogState();
-}
-
-class _CareerDialogState extends State<CareerDialog> {
-  final List<String> years =
-      List<String>.generate(60, (i) => (1965 + i).toString());
-  final List<String> months =
-      List<String>.generate(12, (i) => (i + 1).toString());
-
-  late TextEditingController startYearController;
-  late TextEditingController startMonthController;
-  late TextEditingController endYearController;
-  late TextEditingController endMonthController;
-  late TextEditingController placeController;
-  late TextEditingController descriptionController;
-
-  bool isSaveEnabled = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    final career = widget.career ?? Career();
-    startYearController = TextEditingController(text: career.startYear);
-    startMonthController = TextEditingController(text: career.startMonth);
-    endYearController = TextEditingController(text: career.endYear);
-    endMonthController = TextEditingController(text: career.endMonth);
-    placeController = TextEditingController(text: career.place);
-    descriptionController = TextEditingController(text: career.description);
-
-    startYearController.addListener(_checkIfAllFieldsFilled);
-    startMonthController.addListener(_checkIfAllFieldsFilled);
-    endYearController.addListener(_checkIfAllFieldsFilled);
-    endMonthController.addListener(_checkIfAllFieldsFilled);
-    placeController.addListener(_checkIfAllFieldsFilled);
-    descriptionController.addListener(_checkIfAllFieldsFilled);
-  }
-
-  @override
-  void dispose() {
-    startYearController.dispose();
-    startMonthController.dispose();
-    endYearController.dispose();
-    endMonthController.dispose();
-    placeController.dispose();
-    descriptionController.dispose();
-    super.dispose();
-  }
-
-  void _checkIfAllFieldsFilled() {
-    setState(() {
-      isSaveEnabled = startYearController.text.isNotEmpty &&
-          startMonthController.text.isNotEmpty &&
-          endYearController.text.isNotEmpty &&
-          endMonthController.text.isNotEmpty &&
-          placeController.text.isNotEmpty &&
-          descriptionController.text.isNotEmpty;
-    });
-  }
-
-  List<String> _getFilteredYears({String? startYear, String? endYear}) {
-    // 시작 날짜를 선택한 경우 종료 날짜는 시작 날짜 이후로만 선택 가능
-    if (startYear != null && startYear.isNotEmpty) {
-      return years
-          .where((year) => int.parse(year) >= int.parse(startYear))
-          .toList();
-    }
-    // 종료 날짜를 선택한 경우 시작 날짜는 종료 날짜 이전으로만 선택 가능
-    if (endYear != null && endYear.isNotEmpty) {
-      return years
-          .where((year) => int.parse(year) <= int.parse(endYear))
-          .toList();
-    }
-    return years;
-  }
-
-  List<String> _getFilteredMonths() {
-    // 시작년도와 종료년도가 같은 경우에만 월을 제한
-    if (startYearController.text.isNotEmpty &&
-        endYearController.text.isNotEmpty &&
-        startYearController.text == endYearController.text) {
-      int startMonthValue =
-          int.tryParse(startMonthController.text) ?? 1; // 시작 월이 없으면 1월로 가정
-      // 시작 월과 같거나 이후의 월만 선택 가능
-      return months
-          .where((month) => int.parse(month) >= startMonthValue)
-          .toList();
-    }
-    return months; // 년도가 다르면 모든 월이 선택 가능
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('경력 추가'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField<String>(
-              decoration: const InputDecoration(labelText: '근무 시작 (년)'),
-              value: startYearController.text.isNotEmpty
-                  ? startYearController.text
-                  : null,
-              items: _getFilteredYears(endYear: endYearController.text)
-                  .map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (newValue) {
-                setState(() {
-                  startYearController.text = newValue ?? '';
-                });
-              },
-            ),
-            DropdownButtonFormField<String>(
-              decoration: const InputDecoration(labelText: '근무 시작 (월)'),
-              value: startMonthController.text.isNotEmpty
-                  ? startMonthController.text
-                  : null,
-              items: months.map((String value) {
-                // 월 필터링 필요 없음
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (newValue) {
-                setState(() {
-                  startMonthController.text = newValue ?? '';
-                });
-              },
-            ),
-            DropdownButtonFormField<String>(
-              decoration: const InputDecoration(labelText: '근무 종료 (년)'),
-              value: endYearController.text.isNotEmpty
-                  ? endYearController.text
-                  : null,
-              items: _getFilteredYears(startYear: startYearController.text)
-                  .map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (newValue) {
-                setState(() {
-                  endYearController.text = newValue ?? '';
-                });
-              },
-            ),
-            DropdownButtonFormField<String>(
-              decoration: const InputDecoration(labelText: '근무 종료 (월)'),
-              value: endMonthController.text.isNotEmpty
-                  ? endMonthController.text
-                  : null,
-              items: _getFilteredMonths().map((String value) {
-                // 수정된 부분
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (newValue) {
-                setState(() {
-                  endMonthController.text = newValue ?? '';
-                });
-              },
-            ),
-            TextField(
-              decoration: const InputDecoration(labelText: '근무지'),
-              controller: placeController,
-            ),
-            TextField(
-              decoration: const InputDecoration(labelText: '근무 내용'),
-              controller: descriptionController,
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: const Text('취소'),
-        ),
-        TextButton(
-          onPressed: isSaveEnabled
-              ? () {
-                  final newExperience = Career()
-                    ..startYear = startYearController.text
-                    ..startMonth = startMonthController.text
-                    ..endYear = endYearController.text
-                    ..endMonth = endMonthController.text
-                    ..place = placeController.text
-                    ..description = descriptionController.text;
-                  widget.onSave(newExperience);
-                  Navigator.of(context).pop();
-                }
-              : null,
-          child: const Text('완료'),
-        ),
-      ],
-    );
-  }
-}
-
-/*
-import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:desktop_drop/desktop_drop.dart';
-import 'dart:typed_data';
-
-import 'package:halmoney/screens/resume/resumeEdit2.dart';
-
-class ExtraResumePage extends StatelessWidget {
-  final String id;
-  final List<String> selectedSkills;
-  final List<String> selectedStrens;
-
-  const ExtraResumePage({super.key, required this.id, required this.selectedSkills, required this.selectedStrens});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 1.0,
-          title: Row(
-            //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Image.asset(
-                'assets/images/img_logo.png',
-                fit: BoxFit.contain,
-                height: 40,
-              ),
-              Container(
-                  padding: const EdgeInsets.all(8.0),
+          if (isEditing) ...[
+            GridView.count(
+              shrinkWrap: true,
+              primary: false,
+              crossAxisCount: 2,
+              childAspectRatio: 3 / 1,
+              children: <Widget>[
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  child: const Text("근무한 곳", style: TextStyle(fontSize: 20, fontFamily: 'NanumGothicFamily')),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(10),
                   child: const Text(
-                    '할MONEY',
-                    style : TextStyle(
-                      fontFamily: 'NanumGothicFamily',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 18.0,
-                      color: Colors.black,
-                      //Color.fromARGB(250, 51, 51, 255),
-                    ),)
-              ),
-            ],
-          ),
-        ),
-        body: Padding (
-            padding: const EdgeInsets.only(left: 35.0, right: 35.0, top:50.0),
-            child: Column(
-              //왼쪽 맞춤 정렬
-              crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '추가할 이력사항이 있다면 첨부해주세요!',
-                    style: TextStyle(
-                        fontSize: 18.0,
-                        fontFamily: 'NanumGothic',
-                        fontWeight: FontWeight.w600),
+                    "근무한 기간",
+                    style: TextStyle(fontSize: 20, fontFamily: 'NanumGothicFamily'),
                   ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  child: TextField(
+                    onChanged: (value){
+                      final newText = value;
+                      final cursorPosition = workPlaceController.selection.baseOffset;
 
-                  const SizedBox(height: 30),
-
-                  Container(child: const FilePickerTest()),
-
-                  const SizedBox(height: 50),
-
-                  const Text(
-                    '추가하고 싶은 내용이 있다면 작성해주세요!',
-                    style: TextStyle(
-                        fontSize: 18.0,
-                        fontFamily: 'NanumGothic',
-                        fontWeight: FontWeight.w600),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  Container(child: const TextField(
-                    decoration: InputDecoration(
-                        labelText: '(선택사항)'
-                    ),
-                  ),
-                  ),
-
-                  const SizedBox(height: 70),
-
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      //backgroundColor: _buttonActive ? const Color.fromARGB(250, 51, 51, 255) : Colors.grey,
-                        backgroundColor: const Color.fromARGB(250, 51, 51, 255),
-                        minimumSize: const Size(360,50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        )
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => ResumeEdit(id: id))
+                      workPlaceController.value = workPlaceController.value.copyWith(
+                        text: newText,
+                        selection: TextSelection.collapsed(offset: cursorPosition),
                       );
+
+                      onFieldChange('place', newText);
                     },
-                    child: const Text('AI로 이력서 만들기',style: TextStyle(color: Colors.white),),
+                    controller: workPlaceController,
+                    decoration: const InputDecoration(
+                      hintText: '(예시) 좋은기업',
+                    ),
                   ),
-                ]
+                ),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 50,
+                        child: TextField(
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) =>
+                              onFieldChange('duration', value),
+                          controller: workDurationController,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      DropdownButton<String>(
+                        value:
+                        career.workUnit.isNotEmpty ? career.workUnit : '년',
+                        items: ['주', '개월', '년'].map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (newValue) {
+                          if (newValue != null) {
+                            onFieldChange('unit', newValue);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(5),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      TextButton(
+                        onPressed: onCancel, // 취소 버튼 동작
+                        style: ButtonStyle(
+                          backgroundColor:
+                          MaterialStateProperty.all(Colors.red),
+                        ),
+                        child: const Text('취소',
+                            style:
+                            TextStyle(color: Colors.white, fontSize: 20)),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(5),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: onSave, // 완료 버튼 동작
+                        style: ButtonStyle(
+                          backgroundColor:
+                          MaterialStateProperty.resolveWith<Color?>(
+                                (Set<MaterialState> states) {
+                              if (onSave != null) {
+                                return Color.fromARGB(250, 51, 51, 255); // 활성화 시 파란색
+                              }
+                              return Colors.grey; // 비활성화 시 회색
+                            },
+                          ),
+                        ),
+                        child: const Text('완료',
+                            style:
+                            TextStyle(color: Colors.white, fontSize: 20)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             )
-        )
-    );
-  }
-}
-
-class FilePickerTest extends StatefulWidget{
-  const FilePickerTest({super.key});
-
-  @override
-  FilePickerTestState createState() => FilePickerTestState();
-}
-
-class FilePickerTestState extends State<FilePickerTest> {
-  //final List<XFile> _list = [];
-
-  String showFileName = "";
-  bool _dragging = false;
-
-  Color defaultColor = Colors.black38;
-  Color uploadingColor = Colors.blue[100]!;
-
-  Container makeFilePicker(){
-    Color color = _dragging ? uploadingColor : defaultColor;
-    return Container(
-      height: 200,
-      width: 340,
-      decoration: BoxDecoration(
-        border: Border.all(width: 5, color: color,),
-        borderRadius: const BorderRadius.all(Radius.circular(20)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          //drag and drop 부분
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text("드래그하여 파일 업로드\n", style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 20))
-            ],
-          ),
-          //picker 부분
-          InkWell(
-            onTap: () async {
-              FilePickerResult? result = await FilePicker.platform.pickFiles(
-                type: FileType.custom,
-                allowedExtensions: ['pdf', 'png', 'jpg', 'csv'],
-              );
-              if( result != null && result.files.isNotEmpty ){
-                String fileName = result.files.first.name;
-                Uint8List fileBytes = result.files.first.bytes!;
-                debugPrint(fileName);
-                setState(() {
-                  showFileName = "Now File Name: $fileName";
-                });
-                /*
-                do jobs
-                 */
-              }
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text("or ", style: TextStyle(fontWeight: FontWeight.bold,color:defaultColor, fontSize:20 ),),
-                Text("파일을 찾아 업로드하기", style: TextStyle(fontWeight: FontWeight.bold, color: defaultColor, fontSize: 20,),),
-                Icon(Icons.upload_rounded, color: defaultColor,),
+          ] else ...[
+            GridView.count(
+              shrinkWrap: true,
+              primary: false,
+              crossAxisCount: 2,
+              childAspectRatio: 3 / 1,
+              children: <Widget>[
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  child: Text("근무한 곳", style: const TextStyle(fontSize: 20, fontFamily: 'NanumGothicFamily')),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  child: Text("근무한 기간", style: const TextStyle(fontSize: 20, fontFamily: 'NanumGothicFamily')),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  child: Text(
+                    softWrap: true,
+                    overflow: TextOverflow.ellipsis,
+                    career.workPlace,
+                    style: const TextStyle(fontSize: 20, fontFamily: 'NanumGothicFamily'),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  child: Text('${career.workDuration} ${career.workUnit}',
+                      style: const TextStyle(fontSize: 20, fontFamily: 'NanumGothicFamily')),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(5),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      TextButton(
+                        onPressed: onRemove,
+                        style: ButtonStyle(
+                          backgroundColor:
+                          MaterialStateProperty.all(Colors.red),
+                        ),
+                        child: const Text('삭제',
+                            style:
+                            TextStyle(color: Colors.white, fontSize: 20, fontFamily: 'NanumGothicFamily')),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(5),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: onEdit,
+                        style: ButtonStyle(
+                          backgroundColor:
+                          MaterialStateProperty.all(Color.fromARGB(250, 51, 51, 255)),
+                        ),
+                        child: const Text('편집',
+                            style:
+                            TextStyle(color: Colors.white, fontSize: 20, fontFamily: 'NanumGothicFamily')),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-          ),
-          Text("(*.pdf/png/jpg/csv)", style: TextStyle(color: defaultColor,),),
-          const SizedBox(height: 10,),
-          Text(showFileName, style: TextStyle(color: defaultColor,),),
+          ],
         ],
       ),
     );
   }
-
-  @override
-  Widget build(BuildContext context) {
-    // TODO: implement build
-    //makeFilePicker -> makedropzone
-    return DropTarget(
-      onDragDone: (detail) async {
-        debugPrint('onDragDone');
-        if (detail.files.isNotEmpty) {
-          String fileName = detail.files.first.name;
-          Uint8List fileBytes = await detail.files.first.readAsBytes();
-          debugPrint(fileName);
-          setState(() {
-            showFileName = "Now File Name: $fileName";
-          });
-        }
-      },
-      onDragEntered: (detail){
-        setState(() {
-          debugPrint('onDragEntered');
-          _dragging=true;
-        });
-      },
-      onDragExited: (detail){
-        debugPrint('onDragExited');
-        setState(() {
-          _dragging=false;
-        });
-      },
-      child: makeFilePicker(),
-    );
-  }
 }
-*/

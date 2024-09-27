@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:halmoney/FirestoreData/JobProvider.dart';
+import 'package:halmoney/get_user_info/step1_welcome.dart';
 import 'package:halmoney/pages/login_page.dart';
+import 'package:halmoney/AI_pages/search_engine.dart';
+import 'package:halmoney/screens/myPage/myPage.dart';
 import 'package:halmoney/screens/resume/step1_hello.dart';
+import 'package:halmoney/screens/home/home.dart';
+import 'myAppPage.dart';
+import 'package:halmoney/signup_pages/signupStepper_page1.dart';
 import 'package:halmoney/theme.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,11 +22,18 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await dotenv.load(fileName: ".env");
-  runApp(const MyApp());
+  runApp(
+    MultiProvider( //provider를 최상위로 만들어야함
+      providers:[
+        ChangeNotifierProvider(create: (_) => JobsProvider()..fetchJobs()),
+      ],
+      child: MyApp(),
+    )
+  );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
 
   //final String id ='sumin1234';
 
@@ -40,32 +56,13 @@ class MyApp extends StatelessWidget {
       ],
       debugShowCheckedModeBanner:  false,
 
-      //원래 로그인 페이지로 연결
+
       home: LoginPage(),
       // 아래는 테스트용으로 원하는 페이지 연결용
       // git에 올릴때 반드시 수정
-      // home: StepHelloPage(id: "silver"),
+      // home: StepWelcome(id: "silver1234"),
+      // home: MyHomePage(id:'ralral')
 
-      // initialRoute: "/login",
-      // routes: {
-      //   "/login" : (context) => LoginPage(),
-      //   "/signup" : (context) => SignupPage()
-      // },
-      /*home: Scaffold(
-        appBar: AppBar(
-          title: Text('할MONEY'),
-
-        ),
-        body: Center(
-          child: Text(
-            '할MONEY',
-            style: TextStyle(
-              fontSize: 50,
-              color: Colors.indigo,
-            ),
-          )
-        ),
-      ),*/
     );
   }
 }

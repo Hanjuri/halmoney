@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:halmoney/screens/resume/step4_career.dart';
-import 'package:halmoney/screens/resume/userInput.dart';
+import 'package:halmoney/FirestoreData/user_Info.dart';
+import 'package:halmoney/screens/resume/user_prompt_factor.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class StepStrenPage extends StatefulWidget {
-  final UserInput userInput;
+  final UserInfo userInfo;
+  final UserPromptFactor userPromptFactor;
 
   StepStrenPage({
     super.key,
-    required this.userInput,
+    required this.userInfo,
+    required this.userPromptFactor,
   });
 
   @override
@@ -15,11 +19,55 @@ class StepStrenPage extends StatefulWidget {
 }
 
 class _StepStrenPageState extends State<StepStrenPage> {
-  List<String> selectedStrens = [];
+  List<String> selectedAbilities = [];
+  List<String> abilities = [];
 
-  void updateSelectedStrens(List<String> fields) {
+  @override
+  void initState(){
+    super.initState();
+    _fetchCoverLetterAndExtractAbilities();
+  }
+
+  //Firebase에서 역량 키워드 가져오기
+  Future<void> _fetchCoverLetterAndExtractAbilities() async {
+    try {
+      // selectedFields 리스트에서 직무 카테고리 가져오기
+      // 첫 번째 선택된 필드를 직무 카테고리로 사용한다고 가정
+      if (widget.userPromptFactor.selectedFields.isEmpty) {
+        print('직무 카테고리가 선택되지 않았습니다.');
+        return;
+      }
+
+      String jobCategory = widget.userPromptFactor.selectedFields[0]; // 첫 번째 선택된 항목이 직무 카테고리라고 가정
+
+      // Firebase에서 직무에 맞는 역량 키워드 가져오기
+      final jobDoc = await FirebaseFirestore.instance
+          .collection('coverLetter')
+          .doc(jobCategory)
+          .get();
+
+      // jobDoc에서 'Ability' 필드가 있는지 확인
+      if (jobDoc.exists && jobDoc.data()!.containsKey('Ability')) {
+        List<dynamic> abilitiesArray = jobDoc.data()!['Ability'];
+
+        // 배열을 문자열 리스트로 변환 [실시간]
+        setState(() {
+          abilities = abilitiesArray.cast<String>().toList(); // 상태에 저장
+        });
+
+        print('Abilities: $abilities');
+      } else {
+        print('Ability 필드가 존재하지 않습니다.');
+      }
+
+    } catch (e) {
+      print('Error occurred: $e');
+    }
+  }
+
+  void updateSelecdtedAbilities(List<String> abilities){
     setState(() {
-      selectedStrens = fields;
+      selectedAbilities = abilities;
     });
   }
 
@@ -27,190 +75,154 @@ class _StepStrenPageState extends State<StepStrenPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color.fromARGB(250, 51, 51, 255),
         elevation: 1.0,
+        leading: null,
+        automaticallyImplyLeading: false,
         title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Image.asset(
-              'assets/images/img_logo.png',
-              fit: BoxFit.contain,
-              height: 40,
+            GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+              },
+              child: const Row(
+                children: [
+                  //SizedBox(width: 5),
+                  Icon(
+                    Icons.chevron_left,
+                    size: 30,
+                  ),
+                  Text('이전',
+                      style: TextStyle(
+                        fontFamily: 'NanumGothicFamily',
+                        fontSize: 20.0,
+                        color: Colors.white,
+                      )),
+                ],
+              ),
             ),
             Container(
                 padding: const EdgeInsets.all(8.0),
                 child: const Text(
-                  '할MONEY',
+                  '2 / 5',
                   style: TextStyle(
                     fontFamily: 'NanumGothicFamily',
                     fontWeight: FontWeight.w600,
                     fontSize: 18.0,
-                    color: Colors.black,
+                    color: Colors.white,
                   ),
                 )),
+            GestureDetector(
+              onTap: () {
+                widget.userPromptFactor.editSelectedStrens(selectedAbilities);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => StepCareerPage(
+                        userInfo: widget.userInfo,
+                        userPromptFactor: widget.userPromptFactor,
+                      )),
+                );
+              },
+              child: const Row(
+                children: [
+                  Text('다음',
+                      style: TextStyle(
+                        fontFamily: 'NanumGothicFamily',
+                        fontSize: 20.0,
+                        color: Colors.white,
+                      )),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 30,
+                    color: Colors.white,
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.only(
-            left: 25.0, right: 25.0, top: 25.0, bottom: 15.0),
-        child: Column(
-          children: [
-            // 페이지 이동 영역
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // 이전 페이지로 이동
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Row(
-                    children: [
-                      Icon(
-                        Icons.chevron_left,
-                        size: 30,
-                      ),
-                      Text('이전',
-                          style: TextStyle(
-                            fontFamily: 'NanumGothicFamily',
-                            fontSize: 20.0,
-                            color: Colors.black,
-                          )),
-                    ],
-                  ),
-                ),
-
-                //다음 페이지로 이동
-                GestureDetector(
-                  onTap: () {
-                    widget.userInput.editSelectedStrens(selectedStrens);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              StepCareerPage(userInput: widget.userInput)),
-                    );
-                  },
-                  child: const Row(
-                    children: [
-                      Text('다음',
-                          style: TextStyle(
-                            fontFamily: 'NanumGothicFamily',
-                            fontSize: 20.0,
-                            color: Colors.black,
-                          )),
-                      Icon(
-                        Icons.chevron_right,
-                        size: 30,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(
-              height: 20,
-            ),
-
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    // 질문 텍스트 상자
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text('자신의 장점은\n무엇이라고 생각하나요?',
-                            style: TextStyle(
-                              fontFamily: 'NanumGothicFamily',
-                              fontWeight: FontWeight.w500,
-                              fontSize: 28.0,
-                              color: Colors.black,
-                            )),
-                      ],
-                    ),
-                    const SizedBox(height: 15),
-
-                    // 직무 선택 영역
-                    StrenChooseWidget(
-                      selectedStrens: selectedStrens,
-                      onSelectedStrensChanged: updateSelectedStrens,
-                    ),
-                  ],
+        padding: const EdgeInsets.all(25.0),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              const Text(
+                '자신의 장점은 무엇이라고 생각하나요?',
+                style: TextStyle(
+                  fontFamily: 'NanumGothicFamily',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 28.0,
+                  color: Colors.black,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 15),
+              AbilitiesChooseWidget(
+                  abilities: abilities,
+                  selectedAbilities: selectedAbilities,
+                  onSelectedAbilitiesChanged: updateSelecdtedAbilities,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class StrenChooseWidget extends StatefulWidget {
-  final List<String> selectedStrens;
-  final ValueChanged<List<String>> onSelectedStrensChanged;
+class AbilitiesChooseWidget extends StatefulWidget {
+  final List<String> abilities;
+  final List<String> selectedAbilities;
+  final ValueChanged<List<String>> onSelectedAbilitiesChanged;
 
-  const StrenChooseWidget({
+  const AbilitiesChooseWidget({
     super.key,
-    required this.selectedStrens,
-    required this.onSelectedStrensChanged,
+    required this.abilities,
+    required this.selectedAbilities,
+    required this.onSelectedAbilitiesChanged,
   });
 
   @override
-  State<StrenChooseWidget> createState() => _StrenChooseWidgetState();
+  State<AbilitiesChooseWidget> createState() => _AbilitiesChooseWidgetState();
 }
 
-class _StrenChooseWidgetState extends State<StrenChooseWidget> {
-  List<String> fields = [
-    '성실',
-    '친절',
-    '꼼꼼함',
-    '책임감',
-    '적극적',
-    '배려심',
-    '사교성',
-    '세심함',
-    '인사성',
-    '습득력',
-    '정리정돈',
-    '긍정적'
-  ];
-
+class _AbilitiesChooseWidgetState extends State<AbilitiesChooseWidget>{
   TextEditingController _searchTextEditingController = TextEditingController();
 
   String get _searchText => _searchTextEditingController.text.trim();
 
   @override
-  void initState() {
+  void initState(){
     super.initState();
-    _searchTextEditingController.addListener(() {
+    _searchTextEditingController.addListener((){
       setState(() {});
     });
   }
 
   @override
-  void dispose() {
+  void dispose(){
     _searchTextEditingController.dispose();
     super.dispose();
   }
 
-  List<String> _filterStrens() {
-    if (_searchText.isEmpty) return fields;
+  List<String> _filterAbilities() {
+    if (_searchText.isEmpty) return widget.abilities;
 
-    return fields
+    return widget.abilities
         .where(
-            (field) => field.toLowerCase().contains(_searchText.toLowerCase()))
+            (ability) => ability.toLowerCase().contains(_searchText.toLowerCase()))
         .toList();
   }
 
-  void _addNewTag(String tag) {
+  void _addNewTage(String tag){
     setState(() {
-      fields.add(tag);
-      widget.selectedStrens.add(tag);
+      widget.abilities.add(tag);
+      widget.selectedAbilities.add(tag);
     });
-    widget.onSelectedStrensChanged(widget.selectedStrens);
+    widget.onSelectedAbilitiesChanged(widget.selectedAbilities);
   }
 
   @override
@@ -220,9 +232,12 @@ class _StrenChooseWidgetState extends State<StrenChooseWidget> {
       children: [
         _buildSelectedTags(),
         const SizedBox(height: 20),
-        _buildSearchStren(),
+        _buildSearchField(),
         const SizedBox(height: 20),
-        _buildTags(),
+        SizedBox(
+          height: 500,
+          child: _buildTags(),
+        ),
       ],
     );
   }
@@ -231,26 +246,26 @@ class _StrenChooseWidgetState extends State<StrenChooseWidget> {
     return Wrap(
       spacing: 8.0,
       runSpacing: 8.0,
-      children: widget.selectedStrens.map((field) {
+      children: widget.selectedAbilities.map((field) {
         return Chip(
           label: Text(
             field,
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: Colors.white, fontSize: 20),
           ),
-          backgroundColor: Colors.blue,
+          backgroundColor: Color.fromARGB(250, 51, 51, 255),
           deleteIcon: Icon(Icons.close, color: Colors.white),
           onDeleted: () {
             setState(() {
-              widget.selectedStrens.remove(field);
+              widget.selectedAbilities.remove(field);
             });
-            widget.onSelectedStrensChanged(widget.selectedStrens);
+            widget.onSelectedAbilitiesChanged(widget.selectedAbilities);
           },
         );
       }).toList(),
     );
   }
 
-  Widget _buildSearchStren() {
+  Widget _buildSearchField() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 15.0, vertical: 8.0),
       decoration: BoxDecoration(
@@ -263,17 +278,16 @@ class _StrenChooseWidgetState extends State<StrenChooseWidget> {
             child: TextField(
               controller: _searchTextEditingController,
               decoration: const InputDecoration.collapsed(
-                hintText: '장점을 검색하거나 추가하세요',
-                hintStyle: TextStyle(color: Colors.grey),
+                hintText: '역량을 검색하거나 선택하세요',
+                hintStyle: TextStyle(color: Colors.grey, fontSize: 20),
               ),
             ),
           ),
           if (_searchText.isNotEmpty)
             GestureDetector(
               onTap: () {
-                if (_filterStrens().isEmpty &&
-                    !widget.selectedStrens.contains(_searchText)) {
-                  _addNewTag(_searchText);
+                if (!widget.selectedAbilities.contains(_searchText)) {
+                  _addNewTage(_searchText);
                   _searchTextEditingController.clear();
                 }
               },
@@ -287,31 +301,33 @@ class _StrenChooseWidgetState extends State<StrenChooseWidget> {
   }
 
   Widget _buildTags() {
-    return Wrap(
-      spacing: 8.0,
-      runSpacing: 8.0,
-      children: _filterStrens().map((field) {
-        final isSelected = widget.selectedStrens.contains(field);
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              if (isSelected) {
-                widget.selectedStrens.remove(field);
-              } else {
-                widget.selectedStrens.add(field);
-              }
-            });
-            widget.onSelectedStrensChanged(widget.selectedStrens);
-          },
-          child: Chip(
-            label: Text(
-              field,
-              style: TextStyle(color: Colors.black),
+    return SingleChildScrollView(
+      child: Wrap(
+        spacing: 8.0,
+        runSpacing: 8.0,
+        children: _filterAbilities().map((field) {
+          final isSelected = widget.selectedAbilities.contains(field);
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                if (isSelected) {
+                  widget.selectedAbilities.remove(field);
+                } else {
+                  widget.selectedAbilities.add(field);
+                }
+              });
+              widget.onSelectedAbilitiesChanged(widget.selectedAbilities);
+            },
+            child: Chip(
+              label: Text(
+                field,
+                style: TextStyle(color: Colors.black, fontSize: 20),
+              ),
+              backgroundColor: Colors.grey.shade300,
             ),
-            backgroundColor: Colors.grey.shade300,
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     );
   }
 }

@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:halmoney/screens/resume/resumeView.dart';
 import 'package:halmoney/screens/resume/step1_hello.dart';
 
-class ResumeManage extends StatefulWidget {
-  final String id;
+import '../../FirestoreData/user_Info.dart';
 
-  const ResumeManage({super.key, required this.id});
+class ResumeManage extends StatefulWidget {
+  final UserInfo userInfo;
+
+  const ResumeManage({super.key, required this.userInfo});
 
   @override
   _ResumeManageState createState() => _ResumeManageState();
@@ -27,7 +29,7 @@ class _ResumeManageState extends State<ResumeManage> {
     try {
       final QuerySnapshot result = await _firestore
           .collection('user')
-          .where('id', isEqualTo: widget.id)
+          .where('id', isEqualTo: widget.userInfo.userId)
           .get();
       final List<DocumentSnapshot> documents = result.docs;
 
@@ -73,17 +75,27 @@ class _ResumeManageState extends State<ResumeManage> {
       ),
       home: SafeArea(
         child: Scaffold(
+          backgroundColor: Colors.white,
           appBar: AppBar(
-            title: const Text('이력서 관리'),
+            backgroundColor: const Color.fromARGB(250, 51, 51, 255),
+            automaticallyImplyLeading: false,
             centerTitle: true,
-            backgroundColor: Colors.white,
+            elevation: 1.0,
             leading: IconButton(
+              icon: Icon(
+                Icons.arrow_back,
+                color: Colors.white,
+              ),
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              icon: const Icon(Icons.arrow_back_ios_rounded),
-              color: Colors.grey,
             ),
+            title: const Text('이력서 & 자기소개서',
+              style: TextStyle(
+                fontFamily: 'NanumGothicFamily',
+                fontSize: 22.0,
+                color: Colors.white,
+              ),),
           ),
           body: _isLoading
               ? Center(child: CircularProgressIndicator())
@@ -94,7 +106,7 @@ class _ResumeManageState extends State<ResumeManage> {
                 onTap: () async{
                   final result = await Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => StepHelloPage(id: widget.id)),
+                    MaterialPageRoute(builder: (context) => StepHelloPage(userInfo:widget.userInfo,)),
                   );
                   if (result ==true){
                     _fetchResumes();
@@ -122,7 +134,7 @@ class _ResumeManageState extends State<ResumeManage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('새 이력서 작성하기',
+                      Text('AI와 자기소개서 작성하기',
                           style: TextStyle(
                             fontSize: 30.0,
                             color: Colors.white,
@@ -139,7 +151,7 @@ class _ResumeManageState extends State<ResumeManage> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => ResumeView(
-                          id: widget.id,
+                          id: widget.userInfo.userId,
                           resumeId: resume.id,
                         ),
                       ),

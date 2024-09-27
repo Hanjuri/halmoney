@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:halmoney/screens/resume/step3_stren.dart';
-import 'package:halmoney/screens/resume/userInput.dart';
+import 'package:halmoney/FirestoreData/user_Info.dart';
+import 'package:halmoney/screens/resume/user_prompt_factor.dart';
 
 class StepFieldPage extends StatefulWidget {
-  final UserInput userInput;
+  final UserInfo userInfo;
+  final UserPromptFactor userPromptFactor;
 
   StepFieldPage({
     super.key,
-    required this.userInput,
+    required this.userInfo,
+    required this.userPromptFactor,
   });
 
   @override
@@ -15,7 +18,13 @@ class StepFieldPage extends StatefulWidget {
 }
 
 class _StepFieldPageState extends State<StepFieldPage> {
-  List<String> selectedFields = [];
+  late List<String> selectedFields;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedFields = widget.userPromptFactor.getSelctedFields();
+  }
 
   void updateSelectedFields(List<String> fields) {
     setState(() {
@@ -27,121 +36,119 @@ class _StepFieldPageState extends State<StepFieldPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color.fromARGB(250, 51, 51, 255),
         elevation: 1.0,
+        leading: null,
+        automaticallyImplyLeading: false,
         title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Image.asset(
-              'assets/images/img_logo.png',
-              fit: BoxFit.contain,
-              height: 40,
+            GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+              },
+              child: const Row(
+                children: [
+                  //SizedBox(width: 5),
+                  Icon(
+                    Icons.chevron_left,
+                    size: 30,
+                  ),
+                  Text('이전',
+                      style: TextStyle(
+                        fontFamily: 'NanumGothicFamily',
+                        fontSize: 20.0,
+                        color: Colors.white,
+                      )),
+                ],
+              ),
             ),
             Container(
                 padding: const EdgeInsets.all(8.0),
                 child: const Text(
-                  '할MONEY',
+                  '1 / 5',
                   style: TextStyle(
                     fontFamily: 'NanumGothicFamily',
                     fontWeight: FontWeight.w600,
                     fontSize: 18.0,
-                    color: Colors.black,
+                    color: Colors.white,
                   ),
                 )),
+            GestureDetector(
+              onTap: () {
+                widget.userPromptFactor.editSelectedFields(selectedFields);
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => StepStrenPage(
+                        userInfo: widget.userInfo,
+                        userPromptFactor: widget.userPromptFactor,
+                      ),
+                    ));
+              },
+              child: const Row(
+                children: [
+                  Text('다음',
+                      style: TextStyle(
+                        fontFamily: 'NanumGothicFamily',
+                        fontSize: 20.0,
+                        color: Colors.white,
+                      )),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 30,
+                    color: Colors.white,
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.only(
-            left: 25.0, right: 30.0, top: 25.0, bottom: 15.0),
-        child: Column(
-          children: [
-            // 페이지 이동 영역
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // 이전 페이지로 이동
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Row(
-                    children: [
-                      Icon(
-                        Icons.chevron_left,
-                        size: 30,
-                      ),
-                      Text('이전',
-                          style: TextStyle(
-                            fontFamily: 'NanumGothicFamily',
-                            fontSize: 20.0,
-                            color: Colors.black,
-                          )),
-                    ],
-                  ),
-                ),
-
-                // 다음 페이지로 이동
-                GestureDetector(
-                  onTap: () {
-                    widget.userInput.editSelectedFields(selectedFields);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              StepStrenPage(userInput: widget.userInput)),
-                    );
-                  },
-                  child: const Row(
-                    children: [
-                      Text('다음',
-                          style: TextStyle(
-                            fontFamily: 'NanumGothicFamily',
-                            fontSize: 20.0,
-                            color: Colors.black,
-                          )),
-                      Icon(
-                        Icons.chevron_right,
-                        size: 30,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(
-              height: 20,
-            ),
-
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    // 질문 텍스트 상자
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text('어떤 직무에\n지원하고자 하시나요?',
-                            style: TextStyle(
-                              fontFamily: 'NanumGothicFamily',
-                              fontWeight: FontWeight.w500,
-                              fontSize: 28.0,
-                              color: Colors.black,
-                            )),
-                      ],
-                    ),
-                    const SizedBox(height: 15),
-
-                    // 직무 선택 영역
-                    FieldChooseWidget(
-                      selectedFields: selectedFields,
-                      onSelectedFieldsChanged: updateSelectedFields,
-                    ),
-                  ],
-                ),
+        padding: const EdgeInsets.all(25.0),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const SizedBox(
+                height: 20,
               ),
-            ),
-          ],
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Flexible(
+                    child: Text('어떤 일을 하고 싶은가요?',
+                        style: TextStyle(
+                          fontFamily: 'NanumGothicFamily',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 28.0,
+                          color: Colors.black,
+                        )),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Flexible(
+                    child: Text('하고싶은 일을 검색하거나 직접 입력하세요',
+                        style: TextStyle(
+                          fontFamily: 'NanumGothicFamily',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 20.0,
+                          color: Colors.black,
+                        )),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15,),
+              FieldChooseWidget(
+                selectedFields: selectedFields,
+                onSelectedFieldsChanged: updateSelectedFields,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -164,18 +171,27 @@ class FieldChooseWidget extends StatefulWidget {
 
 class _FieldChooseWidgetState extends State<FieldChooseWidget> {
   List<String> fields = [
-    '외식/음료',
-    '매장관리/판매',
-    '서비스',
-    '사무직',
-    '고객응대',
-    '생산/건설/노무',
-    'IT/기술',
+    '개발·데이터',
+    '건축·시설',
+    '고객상담·TM',
+    '고객서비스·리테일',
+    '공공·복지',
+    '교육',
+    '금융·보험',
+    '기획·전략',
     '디자인',
-    '미디어',
-    '운전/배달',
-    '병원/간호/연구',
-    '교육/강사'
+    '마케팅·광고·MD',
+    '물류·무역',
+    '미디어·문화·스포츠',
+    '법무·사무·총무',
+    '식음료',
+    '엔지니어링·설계',
+    '영업',
+    '운전·운송·배송',
+    '의료·바이오',
+    '인사·HR',
+    '제조·생산',
+    '회계·세무'
   ];
 
   TextEditingController _searchTextEditingController = TextEditingController();
@@ -222,7 +238,10 @@ class _FieldChooseWidgetState extends State<FieldChooseWidget> {
         const SizedBox(height: 20),
         _buildSearchField(),
         const SizedBox(height: 20),
-        _buildTags(),
+        SizedBox(
+          height: 500,
+          child: _buildTags(),
+        ),
       ],
     );
   }
@@ -235,9 +254,9 @@ class _FieldChooseWidgetState extends State<FieldChooseWidget> {
         return Chip(
           label: Text(
             field,
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: Colors.white, fontSize: 20),
           ),
-          backgroundColor: Colors.blue,
+          backgroundColor: Color.fromARGB(250, 51, 51, 255),
           deleteIcon: Icon(Icons.close, color: Colors.white),
           onDeleted: () {
             setState(() {
@@ -264,15 +283,14 @@ class _FieldChooseWidgetState extends State<FieldChooseWidget> {
               controller: _searchTextEditingController,
               decoration: const InputDecoration.collapsed(
                 hintText: '직무를 검색하거나 추가하세요',
-                hintStyle: TextStyle(color: Colors.grey),
+                hintStyle: TextStyle(color: Colors.grey, fontSize: 20),
               ),
             ),
           ),
           if (_searchText.isNotEmpty)
             GestureDetector(
               onTap: () {
-                if (_filterFields().isEmpty &&
-                    !widget.selectedFields.contains(_searchText)) {
+                if (!widget.selectedFields.contains(_searchText)) {
                   _addNewTag(_searchText);
                   _searchTextEditingController.clear();
                 }
@@ -287,31 +305,33 @@ class _FieldChooseWidgetState extends State<FieldChooseWidget> {
   }
 
   Widget _buildTags() {
-    return Wrap(
-      spacing: 8.0,
-      runSpacing: 8.0,
-      children: _filterFields().map((field) {
-        final isSelected = widget.selectedFields.contains(field);
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              if (isSelected) {
-                widget.selectedFields.remove(field);
-              } else {
-                widget.selectedFields.add(field);
-              }
-            });
-            widget.onSelectedFieldsChanged(widget.selectedFields);
-          },
-          child: Chip(
-            label: Text(
-              field,
-              style: TextStyle(color: Colors.black),
-            ),
-            backgroundColor: Colors.grey.shade300,
-          ),
-        );
-      }).toList(),
+    return SingleChildScrollView(
+        child: Wrap(
+          spacing: 8.0,
+          runSpacing: 8.0,
+          children: _filterFields().map((field) {
+            final isSelected = widget.selectedFields.contains(field);
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  if (isSelected) {
+                    widget.selectedFields.remove(field);
+                  } else {
+                    widget.selectedFields.add(field);
+                  }
+                });
+                widget.onSelectedFieldsChanged(widget.selectedFields);
+              },
+              child: Chip(
+                label: Text(
+                  field,
+                  style: TextStyle(color: Colors.black, fontSize: 20),
+                ),
+                backgroundColor: Colors.grey.shade300,
+              ),
+            );
+          }).toList(),
+        ),
     );
   }
 }

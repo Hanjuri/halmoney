@@ -4,9 +4,11 @@ import 'package:halmoney/screens/myPage/myPage.dart';
 import 'package:halmoney/Community_pages/Community_main_page.dart';
 import 'package:halmoney/JobSearch_pages/JobSearch_main_page.dart';
 
+import 'FirestoreData/user_Info.dart';
+
 class MyAppPage extends StatefulWidget{
-  final String id;
-  const MyAppPage({super.key, required this.id});
+  final UserInfo userInfo;
+  const MyAppPage({super.key, required this.userInfo});
 
   @override
   State<MyAppPage> createState() => MyAppState();
@@ -21,10 +23,10 @@ class MyAppState extends State<MyAppPage>{
   void initState(){
     super.initState();
     _navIndex = [
-      MyHomePage(id: widget.id),
-      JobSearch(id: widget.id),
-      Communitypage(id: widget.id),
-      MyPageScreen(id: widget.id),
+      MyHomePage(userInfo: widget.userInfo),
+      JobSearch(userInfo: widget.userInfo),
+      Communitypage(id: widget.userInfo.userId),
+      MyPageScreen(userInfo: widget.userInfo),
     ];
   }
   /*final List<Widget> _navIndex = [

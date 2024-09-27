@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:halmoney/Recruit_detail_pages/Recruit_main_page.dart';
+import 'package:halmoney/JobSearch_pages/Recruit_main_page.dart';
+
+import '../FirestoreData/user_Info.dart';
 
 class JobList extends StatefulWidget {
-  final String id;
+  final UserInfo userInfo;
   final int num;
   final String title;
   final String address;
@@ -14,9 +16,10 @@ class JobList extends StatefulWidget {
   final bool isLiked;
   final String image_path;
   final String endday;
+  final String manager_call;
 
   const JobList({
-    required this.id,
+    required this.userInfo,
     required this.num,
     required this.title,
     required this.address,
@@ -27,8 +30,9 @@ class JobList extends StatefulWidget {
     required this.isLiked,
     required this.image_path,
     required this.endday,
-    Key? key,
-  }) : super(key: key);
+    required this.manager_call,
+    super.key,
+  });
 
   @override
   _JobListState createState() => _JobListState();
@@ -47,7 +51,7 @@ class _JobListState extends State<JobList> {
   Future<void> toggleFavorite() async {
     final QuerySnapshot result = await _firestore
         .collection('user')
-        .where('id', isEqualTo: widget.id)
+        .where('id', isEqualTo: widget.userInfo.userId)
         .get();
     final List<DocumentSnapshot> documents = result.docs;
 
@@ -64,10 +68,9 @@ class _JobListState extends State<JobList> {
           'title': widget.title,
           'address': widget.address,
           'wage': widget.wage,
-          'career.dart': widget.career,
+          'career': widget.career,
           'detail': widget.detail,
           'week': widget.workweek,
-          'image_path':widget.image_path,
         });
       } else {
         final QuerySnapshot favoriteResult = await _firestore
@@ -88,7 +91,7 @@ class _JobListState extends State<JobList> {
     try {
       final QuerySnapshot result = await _firestore
           .collection('user')
-          .where('id', isEqualTo: widget.id)
+          .where('id', isEqualTo: widget.userInfo.userId)
           .get();
       final List<DocumentSnapshot> documents = result.docs;
 
@@ -121,7 +124,7 @@ class _JobListState extends State<JobList> {
           context,
           MaterialPageRoute(
             builder: (context) => Recruit_main(
-              id: widget.id,
+              userInfo: widget.userInfo,
               num: widget.num,
               title: widget.title,
               address: widget.address,
@@ -129,8 +132,9 @@ class _JobListState extends State<JobList> {
               career: widget.career,
               detail: widget.detail,
               workweek: widget.workweek,
+              endday:widget.endday,
               image_path: widget.image_path,
-              endday: widget.endday,
+              manager_call: widget.manager_call,
             ),
           ),
         );
@@ -147,22 +151,22 @@ class _JobListState extends State<JobList> {
         children: [
           Row(
             children: [
-              SizedBox(width: 10),
-              Container(
+              const SizedBox(width: 10),
+              SizedBox(
                 width: 100,
                 height: 100,
                 child: Column(
                   children: [
                     Image.asset(
-                      widget.image_path,
+                     widget.image_path,
                       width: 90,
                       height: 90,
                     )
                   ],
                 ),
               ),
-              SizedBox(width: 15),
-              Container(
+              const SizedBox(width: 15),
+              SizedBox(
                 width: 250,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
@@ -173,7 +177,7 @@ class _JobListState extends State<JobList> {
                           Expanded(
                             child: Text(
                               widget.title,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
@@ -199,7 +203,7 @@ class _JobListState extends State<JobList> {
                           Expanded(
                             child: Text(
                               widget.address,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
                                 color: Color.fromARGB(250, 69, 99, 255),
@@ -210,14 +214,14 @@ class _JobListState extends State<JobList> {
                         ],
                       ),
                     ),
-                    SizedBox(height: 3),
+                    const SizedBox(height: 3),
 
                     Container(
                       child: Row(
                         children: [
                           Text(
                             widget.wage,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.normal,
                               color: Colors.black,
