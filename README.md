@@ -1,16 +1,28 @@
-# halmoney
+# 🧑‍🦳 halmoney 🧑‍🦳
 
-A new Flutter project.
+해당 프로젝트는 중장년층을 위한 구인 구직 서비스 앱 입니다 😄
 
-## Getting Started
+## 🌻 이런 걸 구현했어요
+### 🫂 메인 기능
+- 재취업을 위한 일자리 추천 시스템
+- open AI 기반 자소서 생성 기능
+- 문장 단위 일자리 검색 시스템
+### 🫂 구현 기능
+- 로그인/회원가입
+- 홈 화면, 탭바
+- 자소서 생성 기능
+- 자소서 수정 기능
+- 자소서 기반 일자리 추천 기능
+- 일자리 목록 리스트
+- 일자리 상세 페이지
+- 일자리 추천 기능
+- 일자리 검색 기능
+- 마이페이지
+- 커뮤니티
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🌻 활용 스택 및 기술
+- Flutter
+- python
+- flask Server
+- OpenAI
+- Firebase

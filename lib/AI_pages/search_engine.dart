@@ -26,7 +26,7 @@ class _SearchEngine extends State<SearchEngine> {
   Future<void> _searchKeyWords() async {
     try {
       final response = await http.post(
-        Uri.parse('http://172.20.6.214:5000/nerExtraction'), // Flask 서버의 IP 주소
+        Uri.parse('http://172.20.13.71:5000/nerExtraction'), // Flask 서버의 IP 주소
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -57,6 +57,7 @@ class _SearchEngine extends State<SearchEngine> {
         print('Failed to load entities. Status Code: ${response.statusCode}');
         throw Exception('Failed to load entities');
       }
+      _filterJobs();
     } catch (e) {
       print('Error occurred while fetching keywords: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -188,18 +189,18 @@ class _SearchEngine extends State<SearchEngine> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromARGB(250, 51, 51, 255),
-                    minimumSize: const Size(175, 45),
+                    minimumSize: const Size(350, 45),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   onPressed: _searchKeyWords,
                   child: const Text(
-                    '키워드 추출',
+                    '문장으로 검색해보세요!',
                     style: TextStyle(fontSize: 18.0, color: Colors.white),
                   ),
                 ),
-                SizedBox(width: 5),
+                /*SizedBox(width: 5),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromARGB(250, 51, 51, 255),
@@ -213,7 +214,7 @@ class _SearchEngine extends State<SearchEngine> {
                     '일자리 검색',
                     style: TextStyle(fontSize: 18.0, color: Colors.white),
                   ),
-                ),
+                ),*/
               ],
             ),
           ],
