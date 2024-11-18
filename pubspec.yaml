@@ -1,9 +1,10 @@
 name: halmoney
-description: "A new Flutter project."
+description: "중장년층을 위한 구인 구직 서비스 Halmoney 입니다"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-
+publisher: onelineone11@gmail.com
+homepage: https://github.com/Hanjuri
+repository: https://github.com/Hanjuri/halmoney.git
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
 # followed by an optional build number separated by a +.
